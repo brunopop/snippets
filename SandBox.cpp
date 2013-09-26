@@ -14,7 +14,7 @@ template<class T> std::vector<T> QuickSortSimple(std::vector<T> &array)
 	// Separate smaller elements from greater elements
 	std::vector<T> smaller, greater;
 	std::vector<T>::iterator it = array.begin();
-	int i=0;
+	unsigned int i=0;
 	// First half of the array
 	for (; i<array.size()/2; i++)
 	{
@@ -187,7 +187,7 @@ template<class T> std::vector<T> WigglySort(std::vector<T> &array)
 //	}
 //};
 
-template<class T> T QuickSelect(std::vector<T> &array, int k)
+template<class T> T QuickSelect(std::vector<T> &array, unsigned int k)
 {
 	if (array.size() < 2) return array[0];
 	T pivot = array[array.size()/2];
@@ -218,6 +218,58 @@ template<class T> T QuickSelect(std::vector<T> &array, int k)
 	}
 };
 
+// Find the weighted median of an array
+// All elements are supposed distinct and not sorted
+// The sum of all weights is supposed to equal 1
+// sum is the sum of the weights of the elements that are smaller than those in array
+// The first call of FindWeightedMedian is FindWeightedMedian(A, W, 0),
+// where A is the original array with weights W.
+// The algorithm terminates in O(n) time in the worst case
+template<class T> T FindWeightedMedian(std::vector<T> &array, std::vector<double> &weights, double sum)
+{
+	int n = array.size();
+	// If the array has one element, then it is the weighted median
+	if (n <= 1) return array[0];
+	// If n is even, the index of the median is n/2
+	int median_k = n/2-1;
+	// If n is odd, the index of the median is (n+1)/2
+	if (n % 2 != 0) median_k = (n+1)/2-1;
+	// Find the median of A
+	T median = QuickSelect(array, median_k);
+	// Partition A into B and C
+	// smaller contains elements that are <= median
+	// greater contains elements that are > median
+	std::vector<T> smaller, greater;
+	// smaller_weights and greater_weights contain corresponding weights
+	std::vector<double> smaller_weights, greater_weights;
+	// At the same time, compute the weighted sum for smaller elements
+	double w_sum = 0;
+	for (unsigned int i=0; i<array.size(); i++)
+	{
+		if (array[i] > median)
+		{
+			greater.push_back(array[i]);
+			greater_weights.push_back(weights[i]);
+		}
+		else
+		{
+			smaller.push_back(array[i]);
+			smaller_weights.push_back(weights[i]);
+			w_sum += weights[i];
+		}
+	}
+	// If w_sum is >= 1/2 then the weighted median is in smaller
+	// Otherwise, it is in greater
+	if (w_sum + sum >= 0.5)
+	{
+		return FindWeightedMedian(smaller, smaller_weights, sum);
+	}
+	else
+	{
+		return FindWeightedMedian(greater, greater_weights, w_sum + sum);
+	}
+}
+
 int maxSubsequence(std::vector<int> &array, int &begin, int &end)
 {
 	std::vector<int> result(array.size(), 0);
@@ -229,7 +281,7 @@ int maxSubsequence(std::vector<int> &array, int &begin, int &end)
 	int global_begin = 0;
 	int global_end = 0;
 
-	for (int i=1; i<array.size(); i++)
+	for (unsigned int i=1; i<array.size(); i++)
 	{
 		if (array[i] > currMax + array[i])
 		{
@@ -300,6 +352,13 @@ std::vector<std::string> split(const std::string& s, char delim)
 
 int main(int argc, char* argv[])
 {
+	// Find the weighted median of an array in O(n) time
+	int elems[] = {10, -20, 9, 8, 15, -12, 6, 5, 4, 2, -5, 3, 1};
+	double weights[] = {0.01, 0.2, 0.1, 0.05, 0.03, 0.01, 0.21, 0.17, 0.03, 0.03, 0.1, 0.04, 0.02};
+	int weighted_median = FindWeightedMedian(std::vector<int>(elems, elems+sizeof(elems)/sizeof(int)),
+												std::vector<double>(weights, weights+sizeof(weights)/sizeof(double)), 0.0);
+
+
 	// Goldbach's conjecture
 	int n = 41;
 	int p = 0, q = 0;
